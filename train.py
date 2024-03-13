@@ -68,11 +68,10 @@ def train(model: nn.Module, dl: torch.utils.data.DataLoader, epochs: int = 5, mo
 
     start_time = time.time()
     for epoch in range(epochs):
-        running_loss = 0.0
         model.train()
         train_loss = train_epoch(model, dl, optimizer, lr_scheduler, step, device)
         model.eval()
-        epoch_loss = running_loss / len(dl)
+        epoch_loss = train_loss.avg
         print(f"Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss:.4f}")
         break
 
