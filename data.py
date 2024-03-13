@@ -9,10 +9,15 @@ import pandas as pd
 stats = [0.5, 0.5, 0.5], [0.5, 0.5, 0.5]
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, image_paths, captions, tokenizer, transforms):
+    def __init__(self, image_paths, captions, tokenizer, transforms, rows: int = None):
+        if isinstance(image_paths, str):
+            image_paths = os.listdir(image_paths)
         self.image_paths = list(image_paths)
         self.captions = list(captions)
-        self.encoded_captions = tokenizer(list(captions), padding=True, truncation=True, max_length=200, return_tensors='pt')
+        if rows:
+            self.captions = self.captions[:rows]
+            self.image_paths = self.image_paths[:rows]
+        self.encoded_captions = tokenizer(self.captions, padding=True, truncation=True, max_length=200, return_tensors='pt')
         self.transforms = transforms
 
     def __getitem__(self, idx):
@@ -27,7 +32,7 @@ class Dataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.captions)
 
-def create_dataloader(ds: torch.utils.data.Dataset):
+def create_dataloader(ds: torch.utils.data.Dataset, batch_size: int = batch_size):
     return torch.utils.data.DataLoader(ds, batch_size=batch_size, num_workers=workers, shuffle=True)
 
 def create_dataframe(data_file: str = "data.csv", rows: int = None):

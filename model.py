@@ -1,9 +1,11 @@
 import torch.nn.functional as F
-from torch import nn
+from torch import nn, tensor
 from transformers import AutoTokenizer, AutoModel
 import torchvision
 import timm
 from config import *
+from data import image_transform
+from PIL import Image
 
 
 class ImageEncoder(nn.Module):
@@ -74,11 +76,32 @@ class Model(nn.Module):
         self.text_projection = ProjectionHead(text_encoder_size, text_embedding_size)
         self.temperature = model_temperature
 
+    def get_embeddings(self, image: Image = None, image_arr: tensor = None, caption: str = None, input_ids: tensor = None, attention_mask: tensor = None):
+        # torch.Size([1, 3, 224, 224])
+        # torch.Size([1, 1000])
+        # torch.Size([1, 22])
+        # torch.Size([1, 768])
+        if image is not None and image_arr is None:
+            image_arr = image_transform(image.convert('RGB')).unsqueeze(0)
+        image_features = self.image_encoder(image_arr)
+        if input_ids is not None and attention_mask is not None and caption is None:
+            text_features = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask)
+        else:
+            tokens = self.text_encoder.tokenizer(caption, padding=True, truncation=True, max_length=200, return_tensors='pt')
+            text_features = self.text_encoder(input_ids=tokens['input_ids'], attention_mask=tokens['attention_mask'])
+        image_embeddings = self.image_projection(image_features)
+        text_embeddings = self.text_projection(text_features)
+        return image_embeddings, text_embeddings
+
     def forward(self, batch):
+        # torch.Size([1, 3, 224, 224])
+        # torch.Size([1, 1000])
+        # torch.Size([1, 77])
+        # torch.Size([1, 768])
         image_features = self.image_encoder(batch['image'])
         text_features = self.text_encoder(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"])
-        image_embeddings = self.image_projection(image_features).T
-        text_embeddings = self.text_projection(text_features).T
+        image_embeddings = self.image_projection(image_features)
+        text_embeddings = self.text_projection(text_features)
 
         # Calculating the Loss
         logits = (text_embeddings @ image_embeddings.T) / self.temperature
