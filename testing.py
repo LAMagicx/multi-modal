@@ -10,10 +10,10 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 df = create_dataframe()
 
 model = Model()
-model.load_state_dict(torch.load("model.pt", map_location=torch.device("cpu")))
+model.load_state_dict(torch.load("model_v2_10k.py", map_location=torch.device("cpu")))
 
 ds = Dataset("images", df["caption"].to_list(), model.text_encoder.tokenizer, image_transform, rows=100)
-# dl = create_dataloader(ds, batch_size=1)
+dl = create_dataloader(ds, batch_size=1)
 
 
 img1 = Image.open(os.path.join("images", df["image_name"][20])).convert("RGB")
