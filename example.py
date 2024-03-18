@@ -7,41 +7,41 @@ import skimage
 import IPython.display
 import matplotlib.pyplot as plt
 import numpy as np
-
-class ImgRetrieval:
-    def __init__(self, image_paths, model, process_image, data_file: str = ""):
-        self.image_paths = image_paths
-        self.preprocess = process_image
-        # self.data = [preprocess(Image.open(os.path.join("images", image_path)).convert("RGB")) for image_path in image_paths]
-        self.model = model
-        if data_file:
-            self.img_vecs = torch.load(data_file)
-        else:
-            self.img_vecs = []
-            for i in range(0, len(self.image_paths)):
-                with torch.no_grad():
-                    data = self.preprocess(Image.open(os.path.join("images", self.image_paths[i])).convert("RGB"))
-                    temp = data.reshape(1, 3, 224, 224)
-                    img_vecs = model.encode_image(temp).float()
-                    temp = temp.to('cpu')
-                    self.img_vecs.append(img_vecs)
-                if i % 200 == 0:
-                    print('{}th encoding complete'.format(i))
-            self.img_vecs = torch.vstack(self.img_vecs)
-            self.img_vecs = self.img_vecs / self.img_vecs.norm(dim=-1, keepdim=True)
-            torch.save(self.img_vecs, "image_vectors.pt")
-
-    def retrieve(self, text):
-        text_vec = self.model.encode_text(clip.tokenize(text)).float()
-        text_vec = text_vec / text_vec.norm(dim=-1, keepdim=True)
-        pick = torch.argmax(text_vec @ self.img_vecs.T)
-        return Image.open(os.path.join("images", self.image_paths[pick])).convert("RGB")
+from data import create_dataframe, create_dataloader, Dataset, image_transform
+from retrival import CustImgRetrieval as ImgRetrieval
+from model import Model
 
 
+print("Loading model")
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = clip.load("ViT-B/32", device=device)
 
-tokens = clip.tokenize('Photo of many people near the beach. They are playing with beach ball')
+# CLIP model
+# model, preprocess = clip.load("ViT-B/32", device=device)
+
+model = Model()
+model.load_state_dict(torch.load("model_v2_10k.py", map_location=torch.device("cpu")))
+
+ret = ImgRetrieval(image_paths=os.listdir("images")[:10000], model=model, process_image=image_transform, data_file="custom_image_vectors.pt")
 
 
-ret = ImgRetrieval(image_paths=os.listdir("images")[:10000], model=model, process_image=preprocess, data_file="image_vectors.pt")
+df = create_dataframe()
+
+img1 = Image.open(os.path.join("images", df["image_name"][20]))
+text1 = df["caption"][20]
+img2 = Image.open(os.path.join("images", df["image_name"][10]))
+text2 = df["caption"][10]
+
+img1_vec = ret.encode_image(img1)
+text1_vec = ret.encode_text(text1)
+img2_vec = ret.encode_image(img2)
+text2_vec = ret.encode_text(text2)
+
+
+print("1")
+print(torch.cdist(img1_vec, text1_vec))
+
+print("2")
+print(torch.cdist(img2_vec, text2_vec))
+
+print(torch.cdist(img1_vec, text2_vec))
+print(torch.cdist(img2_vec, text1_vec))
