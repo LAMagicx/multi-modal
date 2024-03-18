@@ -7,6 +7,7 @@ import timm
 from config import *
 from data import image_transform
 from PIL import Image
+import torch
 
 def get_default_device():
     """Pick GPU if available, else CPU"""
@@ -130,19 +131,15 @@ class Model(nn.Module):
 
         # Calculating the Loss
         logits = (text_embeddings @ image_embeddings.T) / self.temperature
-        n = logits.shape[1]     # number of samples
-        labels = arange(n).to(device)      # Create labels tensor
-        # Calculate cross entropy losses along axis 0 and 1
-        loss_i = F.cross_entropy(logits.transpose(0, 1), labels, reduction="mean")
-        loss_t = F.cross_entropy(logits, labels, reduction="mean")
-        # Calculate the final loss
-        loss = (loss_i + loss_t) / 2
-        # images_similarity = image_embeddings @ image_embeddings.T
-        # texts_similarity = text_embeddings @ text_embeddings.T
-        # targets = F.softmax(
-        #     (images_similarity + texts_similarity) / 2 * self.temperature, dim=-1
-        # )
-        # texts_loss = cross_entropy(logits, targets, reduction='none')
-        # images_loss = cross_entropy(logits.T, targets.T, reduction='none')
-        # loss = (images_loss + texts_loss) / 2.0
+
+        target_matrix = torch.ones_like(logits)
+        target_matrix = target_matrix.masked_fill(torch.diag(torch.diagonal(target_matrix)), 0.0)
+
+        print(target_matrix)
+
+        loss_t = F.cross_entropy(logits, target_matrix, reduction="mean")
+        loss_i = F.cross_entropy(logits.T target_matrix.T, reduction="mean")
+
+        loss = (loss_t + loss_i) / 2.0
+
         return loss.mean()
