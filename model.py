@@ -132,13 +132,10 @@ class Model(nn.Module):
         # Calculating the Loss
         logits = (text_embeddings @ image_embeddings.T) / self.temperature
 
-        target_matrix = torch.ones_like(logits)
-        target_matrix = target_matrix.masked_fill(torch.diag(torch.diagonal(target_matrix)), 0.0)
-
-        print(target_matrix)
+        target_matrix = torch.eye(len(logits))
 
         loss_t = F.cross_entropy(logits, target_matrix, reduction="mean")
-        loss_i = F.cross_entropy(logits.T target_matrix.T, reduction="mean")
+        loss_i = F.cross_entropy(logits.T, target_matrix.T, reduction="mean")
 
         loss = (loss_t + loss_i) / 2.0
 
