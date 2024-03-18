@@ -55,3 +55,5 @@ image_transform = transforms.Compose([transforms.Resize(image_size),
                                       transforms.ToTensor(),
                                       transforms.Normalize(*stats)
                                       ])
+
+print("g")
