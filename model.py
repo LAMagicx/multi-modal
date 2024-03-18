@@ -1,5 +1,6 @@
 import torch.nn.functional as F
-from torch import nn, tensor
+from code import interact
+from torch import nn, tensor, arange
 from transformers import AutoTokenizer, AutoModel
 import torchvision
 import timm
@@ -116,12 +117,19 @@ class Model(nn.Module):
 
         # Calculating the Loss
         logits = (text_embeddings @ image_embeddings.T) / self.temperature
-        images_similarity = image_embeddings @ image_embeddings.T
-        texts_similarity = text_embeddings @ text_embeddings.T
-        targets = F.softmax(
-            (images_similarity + texts_similarity) / 2 * self.temperature, dim=-1
-        )
-        texts_loss = cross_entropy(logits, targets, reduction='none')
-        images_loss = cross_entropy(logits.T, targets.T, reduction='none')
-        loss = (images_loss + texts_loss) / 2.0
+        n = logits.shape[1]     # number of samples
+        labels = arange(n)      # Create labels tensor
+        # Calculate cross entropy losses along axis 0 and 1
+        loss_i = F.cross_entropy(logits.transpose(0, 1), labels, reduction="mean")
+        loss_t = F.cross_entropy(logits, labels, reduction="mean")
+        # Calculate the final loss
+        loss = (loss_i + loss_t) / 2
+        # images_similarity = image_embeddings @ image_embeddings.T
+        # texts_similarity = text_embeddings @ text_embeddings.T
+        # targets = F.softmax(
+        #     (images_similarity + texts_similarity) / 2 * self.temperature, dim=-1
+        # )
+        # texts_loss = cross_entropy(logits, targets, reduction='none')
+        # images_loss = cross_entropy(logits.T, targets.T, reduction='none')
+        # loss = (images_loss + texts_loss) / 2.0
         return loss.mean()

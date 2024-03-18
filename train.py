@@ -62,7 +62,7 @@ def train_epoch(model, train_loader, optimizer, lr_scheduler, step, device):
 
 def train(model: nn.Module, dl: torch.utils.data.DataLoader, epochs: int = 5, model_name: str = "model.pt", lr: float = 1e-3, wd: float = 1e-3):
     device = get_default_device()
-	model = model.to(device)
+    model = model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=2, factor=0.5)
     step = 'epoch'
@@ -74,7 +74,6 @@ def train(model: nn.Module, dl: torch.utils.data.DataLoader, epochs: int = 5, mo
         model.eval()
         epoch_loss = train_loss.avg
         print(f"Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss:.4f}")
-        break
 
     end_time = time.time()
     print(f"{end_time - start_time:.2f}s")
