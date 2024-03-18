@@ -8,6 +8,18 @@ from config import *
 from data import image_transform
 from PIL import Image
 
+def get_default_device():
+    """Pick GPU if available, else CPU"""
+    """ 3 things:
+    1. Connected to Nvidia GPU
+    2. Cuda drivers
+    3. Pytorch suitable to GPU version
+    then torch.cuda.is_available is True
+    """
+    if torch.cuda.is_available():
+        return torch.device('cuda')
+    else:
+        return torch.device('cpu')
 
 class ImageEncoder(nn.Module):
     def __init__(self, model_name=image_embedding_model, pretrained=True, trainable=True):
@@ -106,6 +118,7 @@ class Model(nn.Module):
         return image_embeddings, text_embeddings
 
     def forward(self, batch):
+        device = get_default_device()
         # torch.Size([1, 3, 224, 224])
         # torch.Size([1, 1000])
         # torch.Size([1, 77])
@@ -118,7 +131,7 @@ class Model(nn.Module):
         # Calculating the Loss
         logits = (text_embeddings @ image_embeddings.T) / self.temperature
         n = logits.shape[1]     # number of samples
-        labels = arange(n)      # Create labels tensor
+        labels = arange(n).to(device)      # Create labels tensor
         # Calculate cross entropy losses along axis 0 and 1
         loss_i = F.cross_entropy(logits.transpose(0, 1), labels, reduction="mean")
         loss_t = F.cross_entropy(logits, labels, reduction="mean")
