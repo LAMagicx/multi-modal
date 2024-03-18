@@ -56,4 +56,3 @@ image_transform = transforms.Compose([transforms.Resize(image_size),
                                       transforms.Normalize(*stats)
                                       ])
 
-print("g")
