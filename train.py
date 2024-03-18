@@ -43,11 +43,7 @@ def train_epoch(model, train_loader, optimizer, lr_scheduler, step, device):
     tqdm_obj = tqdm(train_loader, total=len(train_loader))
     for batch in tqdm_obj:
         batch = {k: v.to(device) for k, v in batch.items() if k != "caption"}
-        try:
-            loss = model(batch)
-        except Exception as e:
-            print(str(e))
-            print(batch)
+        loss = model(batch)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

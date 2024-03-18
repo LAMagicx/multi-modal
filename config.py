@@ -13,6 +13,6 @@ text_embedding_size = 512
 model_temperature = 1
 
 batch_size = 64
-workers = 1
+workers = 2
 
 model_name = "model_512_20k_v2.pt"
