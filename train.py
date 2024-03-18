@@ -43,11 +43,7 @@ def train_epoch(model, train_loader, optimizer, lr_scheduler, step, device):
     tqdm_obj = tqdm(train_loader, total=len(train_loader))
     for batch in tqdm_obj:
         batch = {k: v.to(device) for k, v in batch.items() if k != "caption"}
-        try:
-            loss = model(batch)
-        except Exception as e:
-            print(str(e))
-            print(batch)
+        loss = model(batch)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -74,7 +70,6 @@ def train(model: nn.Module, dl: torch.utils.data.DataLoader, epochs: int = 5, mo
         model.eval()
         epoch_loss = train_loss.avg
         print(f"Epoch [{epoch+1}/{epochs}], Loss: {epoch_loss:.4f}")
-        break
 
     end_time = time.time()
     print(f"{end_time - start_time:.2f}s")
