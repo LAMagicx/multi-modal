@@ -88,7 +88,8 @@ class CustImgRetrieval:
     def retrieve(self, text):
         text_vec = self.model.encode_text(text).float()
         text_vec = text_vec / text_vec.norm(dim=-1, keepdim=True)
-        similarities = text_vec @ self.img_vecs.T
-        top_5_indices = torch.topk(similarities, k=5, dim=1)[1].squeeze(0)  # Get top 5 indexes
-        top_5_values = torch.topk(similarities, k=5, dim=1)[0].squeeze(0)  # Get top 5 indexes
+        # similarities = text_vec @ self.img_vecs.T
+        similarities = torch.nn.functional.cosine_similarity(text_vec, self.img_vecs)
+        top_5_indices = torch.topk(similarities, k=5, dim=0)[1].squeeze(0)  # Get top 5 indexes
+        top_5_values = torch.topk(similarities, k=5, dim=0)[0].squeeze(0)  # Get top 5 indexes
         return [Image.open(os.path.join("images", self.image_paths[i])).convert("RGB") for i in top_5_indices.tolist()], top_5_values.tolist()

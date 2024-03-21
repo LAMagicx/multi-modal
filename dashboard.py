@@ -7,11 +7,12 @@ import os
 from retrival import ClipImgRetrieval, CustImgRetrieval
 from data import create_dataframe, create_dataloader, Dataset, image_transform
 from model import Model
+from config import model_name
 
 
 print("Loading custom model")
 cust_model = Model()
-cust_model.load_state_dict(torch.load("model_v2_10k.py", map_location=torch.device("cpu")))
+cust_model.load_state_dict(torch.load(model_name, map_location=torch.device("cpu")))
 
 print("Loading Clip model")
 device = "cuda" if torch.cuda.is_available() else "cpu"
